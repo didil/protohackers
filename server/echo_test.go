@@ -53,4 +53,5 @@ func TestHandleEcho(t *testing.T) {
 	assert.NoError(t, err)
 
 	assert.Equal(t, testString, string(readData))
+	done <- true
 }

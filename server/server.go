@@ -20,11 +20,13 @@ type Server struct {
 }
 
 const (
-	ProtoHackersModeEcho = "echo"
+	ProtoHackersModeEcho      = "echo"
+	ProtoHackersModePrimeTime = "prime"
 )
 
 var validModes = []ProtoHackersMode{
 	ProtoHackersModeEcho,
+	ProtoHackersModePrimeTime,
 }
 
 func NewServer(mode string, port int, logger *zap.Logger) (*Server, error) {
@@ -51,7 +53,7 @@ func (s *Server) Start(done <-chan bool) error {
 		return errors.Wrapf(err, "failed to start listener")
 	}
 
-	s.logger.Sugar().Infof("Server listening on %s ...", addr)
+	s.logger.Sugar().Infof("Server listening on %s / mode: %s ...", addr, s.mode)
 
 	go s.Accept(listener)
 
@@ -92,6 +94,8 @@ func (s *Server) HandleConn(conn net.Conn) {
 	switch s.mode {
 	case ProtoHackersModeEcho:
 		s.HandleEcho(ctx, conn)
+	case ProtoHackersModePrimeTime:
+		s.HandlePrimeTime(ctx, conn)
 	default:
 		panic("invalid mode: " + s.mode)
 	}
