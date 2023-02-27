@@ -6,13 +6,14 @@ import (
 	"encoding/json"
 	"math"
 	"net"
+	"strconv"
 
 	"go.uber.org/zap"
 )
 
 type PrimeTimeRequest struct {
-	Method *string      `json:"method"`
-	Number *json.Number `json:"number"`
+	Method *string          `json:"method"`
+	Number *json.RawMessage `json:"number"`
 }
 
 type PrimeTimeResponse struct {
@@ -93,9 +94,9 @@ func isValidPrimeRequest(req *PrimeTimeRequest) bool {
 		return false
 	}
 
-	_, errF := req.Number.Float64()
-	_, errI := req.Number.Float64()
-	if errF != nil && errI != nil {
+	_, errI := strconv.Atoi(string(*req.Number))
+	_, errF := strconv.ParseFloat(string(*req.Number), 64)
+	if errI != nil && errF != nil {
 		return false
 	}
 
@@ -106,8 +107,8 @@ func isValidPrimeRequest(req *PrimeTimeRequest) bool {
 	return true
 }
 
-func isPrime(number json.Number) bool {
-	n, err := number.Int64()
+func isPrime(number json.RawMessage) bool {
+	n, err := strconv.Atoi(string(number))
 	if err != nil {
 		return false
 	}
@@ -117,7 +118,7 @@ func isPrime(number json.Number) bool {
 	}
 
 	for i := 2; i <= int(math.Sqrt(float64(n))); i++ {
-		if n%int64(i) == 0 {
+		if n%i == 0 {
 			return false
 		}
 	}
