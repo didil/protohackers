@@ -31,7 +31,7 @@ func TestHandleEcho(t *testing.T) {
 		Port: port,
 	}
 
-	time.Sleep(500 * time.Millisecond)
+	time.Sleep(100 * time.Millisecond)
 
 	conn, err := net.DialTCP("tcp4", nil, tcpAddr)
 	assert.NoError(t, err)
@@ -54,4 +54,5 @@ func TestHandleEcho(t *testing.T) {
 
 	assert.Equal(t, testString, string(readData))
 	done <- true
+	time.Sleep(100 * time.Millisecond)
 }

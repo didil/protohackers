@@ -12,7 +12,7 @@ import (
 
 func TestHandlePrimeTime(t *testing.T) {
 	mode := ProtoHackersModePrimeTime
-	port := 35001
+	port := 35000
 	logger, err := zap.NewDevelopment()
 	assert.NoError(t, err)
 
@@ -31,7 +31,7 @@ func TestHandlePrimeTime(t *testing.T) {
 		Port: port,
 	}
 
-	time.Sleep(500 * time.Millisecond)
+	time.Sleep(100 * time.Millisecond)
 
 	conn, err := net.DialTCP("tcp4", nil, tcpAddr)
 	assert.NoError(t, err)
@@ -91,11 +91,12 @@ func TestHandlePrimeTime(t *testing.T) {
 
 	assert.Equal(t, "ERROR", string(readData))
 	done <- true
+	time.Sleep(100 * time.Millisecond)
 }
 
 func TestHandlePrimeTimeMalfo(t *testing.T) {
 	mode := ProtoHackersModePrimeTime
-	port := 35002
+	port := 35000
 	logger, err := zap.NewDevelopment()
 	assert.NoError(t, err)
 
@@ -113,7 +114,7 @@ func TestHandlePrimeTimeMalfo(t *testing.T) {
 		Port: port,
 	}
 
-	time.Sleep(500 * time.Millisecond)
+	time.Sleep(100 * time.Millisecond)
 
 	conn, err := net.DialTCP("tcp4", nil, tcpAddr)
 	assert.NoError(t, err)
@@ -134,11 +135,12 @@ func TestHandlePrimeTimeMalfo(t *testing.T) {
 
 	assert.Equal(t, "ERROR", string(readData))
 	done <- true
+	time.Sleep(100 * time.Millisecond)
 }
 
 func TestHandlePrimeTimeNotNum(t *testing.T) {
 	mode := ProtoHackersModePrimeTime
-	port := 35003
+	port := 35000
 	logger, err := zap.NewDevelopment()
 	assert.NoError(t, err)
 
@@ -156,7 +158,7 @@ func TestHandlePrimeTimeNotNum(t *testing.T) {
 		Port: port,
 	}
 
-	time.Sleep(500 * time.Millisecond)
+	time.Sleep(100 * time.Millisecond)
 
 	conn, err := net.DialTCP("tcp4", nil, tcpAddr)
 	assert.NoError(t, err)
@@ -177,11 +179,12 @@ func TestHandlePrimeTimeNotNum(t *testing.T) {
 
 	assert.Equal(t, "ERROR", string(readData))
 	done <- true
+	time.Sleep(100 * time.Millisecond)
 }
 
 func TestHandlePrimeTimeStringNotNum(t *testing.T) {
 	mode := ProtoHackersModePrimeTime
-	port := 35004
+	port := 35000
 	logger, err := zap.NewDevelopment()
 	assert.NoError(t, err)
 
@@ -199,7 +202,7 @@ func TestHandlePrimeTimeStringNotNum(t *testing.T) {
 		Port: port,
 	}
 
-	time.Sleep(500 * time.Millisecond)
+	time.Sleep(100 * time.Millisecond)
 
 	conn, err := net.DialTCP("tcp4", nil, tcpAddr)
 	assert.NoError(t, err)
@@ -220,4 +223,5 @@ func TestHandlePrimeTimeStringNotNum(t *testing.T) {
 
 	assert.Equal(t, "ERROR", string(readData))
 	done <- true
+	time.Sleep(100 * time.Millisecond)
 }
