@@ -76,7 +76,7 @@ func (s *Server) HandlePrimeTime(ctx context.Context, conn net.Conn) {
 	}
 
 	reqID, _ := ctx.Value(reqIDContextKey).(string)
-	s.logger.Info("echo results",
+	s.logger.Info("prime time results",
 		zap.String("reqID", reqID),
 		zap.String("remote", conn.RemoteAddr().String()),
 		zap.Int("numRequests", numRequests),

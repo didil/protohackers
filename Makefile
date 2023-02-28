@@ -4,8 +4,8 @@ build:
 build_linux:
 	GOOS=linux GOARCH=amd64 go build -o bin/server_linux  main.go
 
-run-echo:
-	go run main.go -m echo
+run:
+	go run main.go -m $(MODE)
 
 test:
 	go test ./...

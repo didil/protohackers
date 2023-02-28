@@ -22,11 +22,13 @@ type Server struct {
 const (
 	ProtoHackersModeEcho      = "echo"
 	ProtoHackersModePrimeTime = "prime"
+	ProtoHackersModeMeans     = "means"
 )
 
 var validModes = []ProtoHackersMode{
 	ProtoHackersModeEcho,
 	ProtoHackersModePrimeTime,
+	ProtoHackersModeMeans,
 }
 
 func NewServer(mode string, port int, logger *zap.Logger) (*Server, error) {
@@ -96,6 +98,8 @@ func (s *Server) HandleConn(conn net.Conn) {
 		s.HandleEcho(ctx, conn)
 	case ProtoHackersModePrimeTime:
 		s.HandlePrimeTime(ctx, conn)
+	case ProtoHackersModeMeans:
+		s.HandleMeans(ctx, conn)
 	default:
 		panic("invalid mode: " + s.mode)
 	}
