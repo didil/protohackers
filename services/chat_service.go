@@ -102,12 +102,6 @@ func (svc *chatService) Broadcast(userId int, msg string) {
 	svc.lock.Lock()
 	defer svc.lock.Unlock()
 
-	user := svc.users[userId]
-	if user == nil {
-		svc.logger.Error("user not found for announcement", zap.Int("userId", userId))
-		return
-	}
-
 	for k, c := range svc.userChannels {
 		// announce to other users only
 		if k != userId {

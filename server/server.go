@@ -40,9 +40,10 @@ func NewServer(mode string, port int, logger *zap.Logger, chatSvc services.ChatS
 		return nil, fmt.Errorf("invalid mode %s", mode)
 	}
 	s := &Server{
-		mode:   ProtoHackersMode(mode),
-		port:   port,
-		logger: logger,
+		mode:    ProtoHackersMode(mode),
+		port:    port,
+		logger:  logger,
+		chatSvc: chatSvc,
 	}
 
 	return s, nil

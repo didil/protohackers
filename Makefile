@@ -1,3 +1,9 @@
+MYGOBIN = $(PWD)/bin
+
+install-tools:
+	@echo MYGOBIN: $(MYGOBIN)
+	@cat tools/tools.go | grep _ | awk -F'"' '{print $$2}' | GOBIN=$(MYGOBIN) xargs -tI % go install %
+
 build:
 	go build  -o bin/server main.go
 
@@ -12,3 +18,8 @@ test:
 
 build-push: build_linux
 	gcloud compute scp --zone=us-east1-b --compress ./bin/server_linux didil@protohackers-1:~
+
+
+.PHONY: gen-mocks
+gen-mocks:
+	mocks/gen_mocks.sh
