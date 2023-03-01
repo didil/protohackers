@@ -16,7 +16,7 @@ func TestHandlePrimeTime(t *testing.T) {
 	logger, err := zap.NewDevelopment()
 	assert.NoError(t, err)
 
-	s, err := NewServer(mode, port, logger)
+	s, err := NewServer(mode, port, logger, nil)
 	assert.NoError(t, err)
 
 	done := make(chan bool, 1)
@@ -100,7 +100,7 @@ func TestHandlePrimeTimeMalfo(t *testing.T) {
 	logger, err := zap.NewDevelopment()
 	assert.NoError(t, err)
 
-	s, err := NewServer(mode, port, logger)
+	s, err := NewServer(mode, port, logger, nil)
 	assert.NoError(t, err)
 
 	done := make(chan bool, 1)
@@ -144,7 +144,7 @@ func TestHandlePrimeTimeNotNum(t *testing.T) {
 	logger, err := zap.NewDevelopment()
 	assert.NoError(t, err)
 
-	s, err := NewServer(mode, port, logger)
+	s, err := NewServer(mode, port, logger, nil)
 	assert.NoError(t, err)
 
 	done := make(chan bool, 1)
@@ -188,7 +188,7 @@ func TestHandlePrimeTimeStringNotNum(t *testing.T) {
 	logger, err := zap.NewDevelopment()
 	assert.NoError(t, err)
 
-	s, err := NewServer(mode, port, logger)
+	s, err := NewServer(mode, port, logger, nil)
 	assert.NoError(t, err)
 
 	done := make(chan bool, 1)

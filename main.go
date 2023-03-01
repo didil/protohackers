@@ -8,6 +8,7 @@ import (
 	"syscall"
 
 	"github.com/didil/protohackers/server"
+	"github.com/didil/protohackers/services"
 	"go.uber.org/zap"
 )
 
@@ -22,7 +23,9 @@ func main() {
 	}
 	defer logger.Sync() // flushes buffer, if any
 
-	s, err := server.NewServer(*mode, *port, logger)
+	chatSvc := services.NewChatService(logger)
+
+	s, err := server.NewServer(*mode, *port, logger, chatSvc)
 	if err != nil {
 		logger.Fatal("server init failed", zap.Error(err))
 	}

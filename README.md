@@ -1,3 +1,3 @@
 # Protohackers solutions (Go)
 
-My solutions in Go to the [Protohackers Challenge](https://protohackers.com/)
+My solutions in Go for the [Protohackers Challenge](https://protohackers.com/)

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net"
 
+	"github.com/didil/protohackers/services"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
@@ -14,24 +15,27 @@ import (
 type ProtoHackersMode string
 
 type Server struct {
-	mode   ProtoHackersMode
-	port   int
-	logger *zap.Logger
+	mode    ProtoHackersMode
+	port    int
+	logger  *zap.Logger
+	chatSvc services.ChatService
 }
 
 const (
-	ProtoHackersModeEcho      = "echo"
-	ProtoHackersModePrimeTime = "prime"
-	ProtoHackersModeMeans     = "means"
+	ProtoHackersModeEcho       = "echo"
+	ProtoHackersModePrimeTime  = "prime"
+	ProtoHackersModeMeans      = "means"
+	ProtoHackersModeBudgetChat = "budget_chat"
 )
 
 var validModes = []ProtoHackersMode{
 	ProtoHackersModeEcho,
 	ProtoHackersModePrimeTime,
 	ProtoHackersModeMeans,
+	ProtoHackersModeBudgetChat,
 }
 
-func NewServer(mode string, port int, logger *zap.Logger) (*Server, error) {
+func NewServer(mode string, port int, logger *zap.Logger, chatSvc services.ChatService) (*Server, error) {
 	if !isValidMode(mode) {
 		return nil, fmt.Errorf("invalid mode %s", mode)
 	}
@@ -100,6 +104,8 @@ func (s *Server) HandleConn(conn net.Conn) {
 		s.HandlePrimeTime(ctx, conn)
 	case ProtoHackersModeMeans:
 		s.HandleMeans(ctx, conn)
+	case ProtoHackersModeBudgetChat:
+		s.HandleBudgetChat(ctx, conn)
 	default:
 		panic("invalid mode: " + s.mode)
 	}

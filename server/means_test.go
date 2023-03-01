@@ -46,7 +46,7 @@ func TestHandleMeans(t *testing.T) {
 	logger, err := zap.NewDevelopment()
 	assert.NoError(t, err)
 
-	s, err := NewServer(mode, port, logger)
+	s, err := NewServer(mode, port, logger, nil)
 	assert.NoError(t, err)
 
 	done := make(chan bool, 1)
