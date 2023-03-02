@@ -24,8 +24,9 @@ func main() {
 	defer logger.Sync() // flushes buffer, if any
 
 	chatSvc := services.NewChatService(logger)
+	unusualDbSvc := services.NewUnusualDbService()
 
-	s, err := server.NewServer(*mode, *port, logger, chatSvc)
+	s, err := server.NewServer(*mode, *port, logger, server.WithChatService(chatSvc), server.WithUnusualDbService(unusualDbSvc))
 	if err != nil {
 		logger.Fatal("server init failed", zap.Error(err))
 	}

@@ -15,17 +15,19 @@ import (
 type ProtoHackersMode string
 
 type Server struct {
-	mode    ProtoHackersMode
-	port    int
-	logger  *zap.Logger
-	chatSvc services.ChatService
+	mode         ProtoHackersMode
+	port         int
+	logger       *zap.Logger
+	chatSvc      services.ChatService
+	unusualDbSvc services.UnusualDbService
 }
 
 const (
-	ProtoHackersModeEcho       = "echo"
-	ProtoHackersModePrimeTime  = "prime"
-	ProtoHackersModeMeans      = "means"
-	ProtoHackersModeBudgetChat = "budget_chat"
+	ProtoHackersModeEcho            = "echo"
+	ProtoHackersModePrimeTime       = "prime"
+	ProtoHackersModeMeans           = "means"
+	ProtoHackersModeBudgetChat      = "budget_chat"
+	ProtoHackersModeUnusualDatabase = "ud"
 )
 
 var validModes = []ProtoHackersMode{
@@ -33,20 +35,40 @@ var validModes = []ProtoHackersMode{
 	ProtoHackersModePrimeTime,
 	ProtoHackersModeMeans,
 	ProtoHackersModeBudgetChat,
+	ProtoHackersModeUnusualDatabase,
 }
 
-func NewServer(mode string, port int, logger *zap.Logger, chatSvc services.ChatService) (*Server, error) {
+type ServerOpt func(*Server) *Server
+
+func NewServer(mode string, port int, logger *zap.Logger, opts ...ServerOpt) (*Server, error) {
 	if !isValidMode(mode) {
 		return nil, fmt.Errorf("invalid mode %s", mode)
 	}
 	s := &Server{
-		mode:    ProtoHackersMode(mode),
-		port:    port,
-		logger:  logger,
-		chatSvc: chatSvc,
+		mode:   ProtoHackersMode(mode),
+		port:   port,
+		logger: logger,
+	}
+
+	for _, opt := range opts {
+		s = opt(s)
 	}
 
 	return s, nil
+}
+
+func WithChatService(chatSvc services.ChatService) ServerOpt {
+	return func(s *Server) *Server {
+		s.chatSvc = chatSvc
+		return s
+	}
+}
+
+func WithUnusualDbService(unusualDbSvc services.UnusualDbService) ServerOpt {
+	return func(s *Server) *Server {
+		s.unusualDbSvc = unusualDbSvc
+		return s
+	}
 }
 
 func isValidMode(mode string) bool {
@@ -54,24 +76,35 @@ func isValidMode(mode string) bool {
 }
 
 func (s *Server) Start(done <-chan bool) error {
+
+	if s.mode == ProtoHackersModeUnusualDatabase {
+		return s.StartUnusualDatabase(done)
+	} else {
+		return s.StartTCP(done)
+	}
+
+	return nil
+}
+
+func (s *Server) StartTCP(done <-chan bool) error {
 	addr := fmt.Sprintf(":%d", s.port)
 	listener, err := net.Listen("tcp4", addr)
 	if err != nil {
 		return errors.Wrapf(err, "failed to start listener")
 	}
 
-	s.logger.Sugar().Infof("Server listening on %s / mode: %s ...", addr, s.mode)
+	s.logger.Sugar().Infof("TCP Server listening on %s / mode: %s ...", addr, s.mode)
 
-	go s.Accept(listener)
+	go s.AcceptTCP(listener)
 
 	<-done
-	s.logger.Sugar().Infof("Received 'done' signal, closing listener")
+	s.logger.Sugar().Infof("TCP: Received 'done' signal, closing listener")
 	listener.Close()
 
 	return nil
 }
 
-func (s *Server) Accept(listener net.Listener) {
+func (s *Server) AcceptTCP(listener net.Listener) {
 	for {
 		conn, err := listener.Accept()
 		if errors.Is(err, net.ErrClosed) {
@@ -83,7 +116,7 @@ func (s *Server) Accept(listener net.Listener) {
 			return
 		}
 
-		go s.HandleConn(conn)
+		go s.HandleTCPConn(conn)
 	}
 }
 
@@ -91,7 +124,7 @@ type ContextKey string
 
 var reqIDContextKey ContextKey = "req-id"
 
-func (s *Server) HandleConn(conn net.Conn) {
+func (s *Server) HandleTCPConn(conn net.Conn) {
 	ctx := context.Background()
 	reqID := uuid.New().String()
 	ctx = context.WithValue(ctx, reqIDContextKey, reqID)
@@ -112,4 +145,21 @@ func (s *Server) HandleConn(conn net.Conn) {
 	}
 
 	s.logger.Info("ended connection", zap.String("reqID", reqID), zap.String("remote", conn.RemoteAddr().String()))
+}
+
+func (s *Server) StartUnusualDatabase(done <-chan bool) error {
+	udpConn, err := net.ListenUDP("udp4", &net.UDPAddr{Port: s.port})
+	if err != nil {
+		return errors.Wrapf(err, "failed to start udp listener")
+	}
+
+	s.logger.Sugar().Infof("UDP Server listening on %d / mode: %s ...", s.port, s.mode)
+
+	go s.HandleUnusualDatabase(udpConn)
+
+	<-done
+	s.logger.Sugar().Infof("UDP: Received 'done' signal, closing listener")
+	udpConn.Close()
+
+	return nil
 }

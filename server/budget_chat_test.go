@@ -36,7 +36,7 @@ func TestHandleBudgetChat(t *testing.T) {
 	chatSvc.EXPECT().RemoveUser(userId).Return()
 	chatSvc.EXPECT().Broadcast(userId, "* peter has left the room").Return()
 
-	s, err := NewServer(mode, port, logger, chatSvc)
+	s, err := NewServer(mode, port, logger, WithChatService(chatSvc))
 	assert.NoError(t, err)
 
 	done := make(chan bool, 1)
