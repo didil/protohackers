@@ -1,4 +1,5 @@
 MYGOBIN = $(PWD)/bin
+PORT?=3000
 
 install-tools:
 	@echo MYGOBIN: $(MYGOBIN)
@@ -11,7 +12,7 @@ build_linux:
 	GOOS=linux GOARCH=amd64 go build -o bin/server_linux  main.go
 
 run:
-	go run main.go -m $(MODE)
+	go run main.go -m $(MODE) -p $(PORT)
 
 test:
 	go test ./...

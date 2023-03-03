@@ -28,6 +28,7 @@ const (
 	ProtoHackersModeMeans           = "means"
 	ProtoHackersModeBudgetChat      = "budget_chat"
 	ProtoHackersModeUnusualDatabase = "ud"
+	ProtoHackersModeMobInTheMiddle  = "mob"
 )
 
 var validModes = []ProtoHackersMode{
@@ -36,6 +37,7 @@ var validModes = []ProtoHackersMode{
 	ProtoHackersModeMeans,
 	ProtoHackersModeBudgetChat,
 	ProtoHackersModeUnusualDatabase,
+	ProtoHackersModeMobInTheMiddle,
 }
 
 type ServerOpt func(*Server) *Server
@@ -140,6 +142,8 @@ func (s *Server) HandleTCPConn(conn net.Conn) {
 		s.HandleMeans(ctx, conn)
 	case ProtoHackersModeBudgetChat:
 		s.HandleBudgetChat(ctx, conn)
+	case ProtoHackersModeMobInTheMiddle:
+		s.HandleMobInTheMiddle(ctx, conn)
 	default:
 		panic("invalid mode: " + s.mode)
 	}
