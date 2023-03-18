@@ -18,7 +18,7 @@ test:
 	go test ./...
 
 build-push: build_linux
-	gcloud compute scp --zone=us-east1-b --compress ./bin/server_linux didil@protohackers-1:~
+	gcloud compute scp --zone=us-east1-b --project "protohackers-381013" --compress ./bin/server_linux didil@protohackers-1:~
 
 
 .PHONY: gen-mocks

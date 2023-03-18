@@ -44,7 +44,12 @@ func (s *Server) HandleMobInTheMiddle(ctx context.Context, conn net.Conn) {
 			}
 
 			msgForClient := buf[:n]
-			_, err = conn.Write([]byte(replaceWithBogusCoin(string(msgForClient))))
+			s.logger.Info("message from upstream", zap.ByteString("msgForClient", msgForClient))
+
+			msgToClient := []byte(replaceWithBogusCoin(string(msgForClient)))
+			s.logger.Info("message to client", zap.ByteString("msgToClient", msgToClient))
+
+			_, err = conn.Write(msgToClient)
 			if err != nil {
 				s.logger.Error("write to client error", zap.Error(err))
 				break
@@ -65,6 +70,12 @@ func (s *Server) HandleMobInTheMiddle(ctx context.Context, conn net.Conn) {
 				s.logger.Error("read from client error", zap.Error(err))
 				return
 			}
+
+			msgFromClient := buf[:n]
+			s.logger.Info("message from client", zap.ByteString("msgFromClient", msgFromClient))
+
+			msgForUpstream := []byte(replaceWithBogusCoin(string(msgFromClient)))
+			s.logger.Info("message to client", zap.ByteString("msgForUpstream", msgForUpstream))
 
 			_, err = upstreamConn.Write(buf[:n])
 			if err != nil {
