@@ -41,7 +41,7 @@ func (s *Server) HandleMobInTheMiddle(ctx context.Context, conn net.Conn) {
 			msgFromUpstream := sc.Bytes()
 			s.logger.Info("message from upstream", zap.ByteString("msgFromUpstream", msgFromUpstream))
 
-			msgToClient := replaceWithBogusCoin(string(msgFromUpstream)) + "\n"
+			msgToClient := replaceWithBogusCoin(string(msgFromUpstream))
 			s.logger.Info("message to client", zap.String("msgToClient", msgToClient))
 
 			_, err = conn.Write([]byte(msgToClient + "\n"))
