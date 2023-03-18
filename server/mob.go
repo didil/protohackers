@@ -2,6 +2,7 @@ package server
 
 import (
 	"bufio"
+	"bytes"
 	"context"
 	"net"
 	"os"
@@ -38,6 +39,7 @@ func (s *Server) HandleMobInTheMiddle(ctx context.Context, conn net.Conn) {
 		defer conn.Close()
 		defer upstreamConn.Close()
 		sc := bufio.NewScanner(upstreamConn)
+		sc.Split(ScanLinesNoLastLine)
 		for sc.Scan() {
 			msgFromUpstream := sc.Bytes()
 			s.logger.Info("message from upstream", zap.ByteString("msgFromUpstream", msgFromUpstream))
@@ -65,6 +67,8 @@ func (s *Server) HandleMobInTheMiddle(ctx context.Context, conn net.Conn) {
 		defer conn.Close()
 		defer upstreamConn.Close()
 		sc := bufio.NewScanner(conn)
+		sc.Split(ScanLinesNoLastLine)
+
 		for sc.Scan() {
 			msgFromClient := sc.Bytes()
 			s.logger.Info("message from client", zap.ByteString("msgFromClient", msgFromClient))
@@ -203,4 +207,24 @@ func replaceAllSubmatchFunc(re *regexp.Regexp, src []byte, repl func([][]byte) [
 	}
 	result = append(result, src[last:]...) // remaining
 	return result
+}
+
+func ScanLinesNoLastLine(data []byte, atEOF bool) (advance int, token []byte, err error) {
+	if atEOF {
+		return 0, nil, nil
+	}
+	if i := bytes.IndexByte(data, '\n'); i >= 0 {
+		// We have a full newline-terminated line.
+		return i + 1, dropCR(data[0:i]), nil
+	}
+
+	// Request more data.
+	return 0, nil, nil
+}
+
+func dropCR(data []byte) []byte {
+	if len(data) > 0 && data[len(data)-1] == '\r' {
+		return data[0 : len(data)-1]
+	}
+	return data
 }
