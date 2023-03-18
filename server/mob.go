@@ -7,6 +7,7 @@ import (
 	"regexp"
 	"sync"
 
+	"github.com/pkg/errors"
 	"go.uber.org/zap"
 )
 
@@ -15,34 +16,13 @@ const mobMsgLimit = 1024
 func (s *Server) HandleMobInTheMiddle(ctx context.Context, conn net.Conn) {
 	defer conn.Close()
 
-	var mobUpstreamHost = os.Getenv("MOB_UPSTREAM_HOST")
-	var mobUpstreamPort = 16963
-
-	ips, err := net.LookupIP(mobUpstreamHost)
+	tcpAddr, err := getMobUpstreamTcpAddr()
 	if err != nil {
-		s.logger.Error("chat server dns lookup error", zap.Error(err))
-		return
-	}
-	if len(ips) == 0 {
-		s.logger.Error("chat server dns lookup no ips")
+		s.logger.Error("getMobUpstreamTcpAddr error", zap.Error(err))
 		return
 	}
 
-	var ip *net.IP
-
-	for _, x := range ips {
-		if x.To4() != nil {
-			ip = &x
-			break
-		}
-	}
-
-	if ip == nil {
-		s.logger.Error("couldn't find ipv4 for chat server")
-		return
-	}
-
-	upstreamConn, err := net.DialTCP("tcp", nil, &net.TCPAddr{IP: ips[0], Port: mobUpstreamPort})
+	upstreamConn, err := net.DialTCP("tcp", nil, tcpAddr)
 	if err != nil {
 		s.logger.Error("chat server connect error", zap.Error(err))
 		return
@@ -63,7 +43,8 @@ func (s *Server) HandleMobInTheMiddle(ctx context.Context, conn net.Conn) {
 				break
 			}
 
-			_, err = conn.Write(buf[:n])
+			msgForClient := buf[:n]
+			_, err = conn.Write([]byte(replaceWithBogusCoin(string(msgForClient))))
 			if err != nil {
 				s.logger.Error("write to client error", zap.Error(err))
 				break
@@ -97,8 +78,38 @@ func (s *Server) HandleMobInTheMiddle(ctx context.Context, conn net.Conn) {
 	wg.Wait()
 }
 
-var bogusCoinRegex = regexp.MustCompile("(7[a-zA-Z0-9]{25,34})")
+func getMobUpstreamTcpAddr() (*net.TCPAddr, error) {
+	var mobUpstreamHost = os.Getenv("MOB_UPSTREAM_HOST")
+	var mobUpstreamPort = 16963
 
-func replaceBogusCoin(msg string) string {
-	bogusCoinRegex.FindAllSubmatchIndex([]byte(msg), -1)
+	ips, err := net.LookupIP(mobUpstreamHost)
+	if err != nil {
+		return nil, errors.Wrapf(err, "chat server dns lookup error")
+	}
+	if len(ips) == 0 {
+		return nil, errors.Wrapf(err, "chat server dns lookup no ips")
+	}
+
+	var ip *net.IP
+
+	for _, x := range ips {
+		if x.To4() != nil {
+			ip = &x
+			break
+		}
+	}
+
+	if ip == nil {
+		return nil, errors.New("couldn't find ipv4 for chat server")
+	}
+
+	return &net.TCPAddr{IP: ips[0], Port: mobUpstreamPort}, nil
+}
+
+var tonysAddress = "7YWHMfk9JZe0LM0g1ZauHuiSxhI"
+
+var bogusCoinRegex = regexp.MustCompile("\\b(7[a-zA-Z0-9]{25,34})\\b")
+
+func replaceWithBogusCoin(msg string) string {
+	return bogusCoinRegex.ReplaceAllString(msg, tonysAddress)
 }
