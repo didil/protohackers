@@ -77,7 +77,7 @@ func (s *Server) HandleMobInTheMiddle(ctx context.Context, conn net.Conn) {
 			msgForUpstream := []byte(replaceWithBogusCoin(string(msgFromClient)))
 			s.logger.Info("message to client", zap.ByteString("msgForUpstream", msgForUpstream))
 
-			_, err = upstreamConn.Write(buf[:n])
+			_, err = upstreamConn.Write(msgForUpstream)
 			if err != nil {
 				s.logger.Error("write to upstream error", zap.Error(err))
 				break
@@ -89,9 +89,10 @@ func (s *Server) HandleMobInTheMiddle(ctx context.Context, conn net.Conn) {
 	wg.Wait()
 }
 
+var mobUpstreamPort = 16963
+
 func getMobUpstreamTcpAddr() (*net.TCPAddr, error) {
 	var mobUpstreamHost = os.Getenv("MOB_UPSTREAM_HOST")
-	var mobUpstreamPort = 16963
 
 	ips, err := net.LookupIP(mobUpstreamHost)
 	if err != nil {
