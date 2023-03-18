@@ -6,6 +6,7 @@ import (
 	"net"
 	"os"
 	"regexp"
+	"strings"
 	"sync"
 
 	"github.com/pkg/errors"
@@ -41,7 +42,7 @@ func (s *Server) HandleMobInTheMiddle(ctx context.Context, conn net.Conn) {
 			msgFromUpstream := sc.Bytes()
 			s.logger.Info("message from upstream", zap.ByteString("msgFromUpstream", msgFromUpstream))
 
-			msgToClient := replaceWithBogusCoin(string(msgFromUpstream))
+			msgToClient := replaceWithBogusCoin2(string(msgFromUpstream))
 			s.logger.Info("message to client", zap.String("msgToClient", msgToClient))
 
 			_, err = conn.Write([]byte(msgToClient + "\n"))
@@ -68,7 +69,7 @@ func (s *Server) HandleMobInTheMiddle(ctx context.Context, conn net.Conn) {
 			msgFromClient := sc.Bytes()
 			s.logger.Info("message from client", zap.ByteString("msgFromClient", msgFromClient))
 
-			msgToUpstream := replaceWithBogusCoin(string(msgFromClient))
+			msgToUpstream := replaceWithBogusCoin2(string(msgFromClient))
 			s.logger.Info("message to upstream", zap.String("msgToUpstream", msgToUpstream))
 
 			_, err = upstreamConn.Write([]byte(msgToUpstream + "\n"))
@@ -119,6 +120,23 @@ func getMobUpstreamTcpAddr() (*net.TCPAddr, error) {
 }
 
 var tonysAddress = "7YWHMfk9JZe0LM0g1ZauHuiSxhI"
+
+var bogusCoinRegex2 = regexp.MustCompile(`^(7[a-zA-Z0-9]{25,34})$`)
+
+func replaceWithBogusCoin2(msg string) string {
+	parts := strings.Split(msg, " ")
+	modifiedParts := make([]string, 0, len(parts))
+
+	for _, part := range parts {
+		if bogusCoinRegex2.MatchString(part) {
+			modifiedParts = append(modifiedParts, tonysAddress)
+		} else {
+			modifiedParts = append(modifiedParts, part)
+		}
+	}
+
+	return strings.Join(modifiedParts, " ")
+}
 
 var bogusCoinRegex = regexp.MustCompile(`(\s|^)(7[a-zA-Z0-9]{25,34})(\s|$)`)
 
