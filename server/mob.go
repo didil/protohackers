@@ -1,6 +1,7 @@
 package server
 
 import (
+	"bufio"
 	"context"
 	"net"
 	"os"
@@ -35,25 +36,24 @@ func (s *Server) HandleMobInTheMiddle(ctx context.Context, conn net.Conn) {
 	go func() {
 		defer conn.Close()
 		defer upstreamConn.Close()
-		for {
-			buf := make([]byte, mobMsgLimit)
-			n, err := upstreamConn.Read(buf)
-			if err != nil {
-				s.logger.Error("read from upstream error", zap.Error(err))
-				break
-			}
+		sc := bufio.NewScanner(upstreamConn)
+		for sc.Scan() {
+			msgFromUpstream := sc.Bytes()
+			s.logger.Info("message from upstream", zap.ByteString("msgFromUpstream", msgFromUpstream))
 
-			msgForClient := buf[:n]
-			s.logger.Info("message from upstream", zap.ByteString("msgForClient", msgForClient))
+			msgToClient := replaceWithBogusCoin(string(msgFromUpstream)) + "\n"
+			s.logger.Info("message to client", zap.String("msgToClient", msgToClient))
 
-			msgToClient := []byte(replaceWithBogusCoin(string(msgForClient)))
-			s.logger.Info("message to client", zap.ByteString("msgToClient", msgToClient))
-
-			_, err = conn.Write(msgToClient)
+			_, err = conn.Write([]byte(msgToClient + "\n"))
 			if err != nil {
 				s.logger.Error("write to client error", zap.Error(err))
 				break
 			}
+		}
+
+		err = sc.Err()
+		if err != nil {
+			s.logger.Error("read from upstream error", zap.Error(err))
 		}
 
 		wg.Done()
@@ -63,26 +63,26 @@ func (s *Server) HandleMobInTheMiddle(ctx context.Context, conn net.Conn) {
 	go func() {
 		defer conn.Close()
 		defer upstreamConn.Close()
-		for {
-			buf := make([]byte, mobMsgLimit)
-			n, err := conn.Read(buf)
-			if err != nil {
-				s.logger.Error("read from client error", zap.Error(err))
-				return
-			}
-
-			msgFromClient := buf[:n]
+		sc := bufio.NewScanner(conn)
+		for sc.Scan() {
+			msgFromClient := sc.Bytes()
 			s.logger.Info("message from client", zap.ByteString("msgFromClient", msgFromClient))
 
-			msgForUpstream := []byte(replaceWithBogusCoin(string(msgFromClient)))
-			s.logger.Info("message to client", zap.ByteString("msgForUpstream", msgForUpstream))
+			msgToUpstream := replaceWithBogusCoin(string(msgFromClient))
+			s.logger.Info("message to upstream", zap.String("msgToUpstream", msgToUpstream))
 
-			_, err = upstreamConn.Write(msgForUpstream)
+			_, err = upstreamConn.Write([]byte(msgToUpstream + "\n"))
 			if err != nil {
 				s.logger.Error("write to upstream error", zap.Error(err))
 				break
 			}
 		}
+
+		err = sc.Err()
+		if err != nil {
+			s.logger.Error("read from client error", zap.Error(err))
+		}
+
 		wg.Done()
 	}()
 
