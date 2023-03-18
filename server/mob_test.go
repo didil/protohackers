@@ -27,11 +27,12 @@ func TestHandleMobInTheMiddle(t *testing.T) {
 
 	msgReceivedByMobServer := ""
 	go func() {
-		buff := make([]byte, mobMsgLimit)
+		assert.NotNil(t, upstreamListener)
 		conn, err := upstreamListener.Accept()
 		assert.NoError(t, err)
 		defer conn.Close()
 
+		buff := make([]byte, mobMsgLimit)
 		n, err := conn.Read(buff)
 		assert.NoError(t, err)
 
@@ -68,4 +69,5 @@ func TestReplaceWithBogusCoin(t *testing.T) {
 	assert.Equal(t, "Hi alice, please send payment to 7YWHMfk9JZe0LM0g1ZauHuiSxhI", replaceWithBogusCoin("Hi alice, please send payment to 7iKDZEwPZSqIvDnHvVN2r0hUWXD5rHX"))
 	assert.Equal(t, "Hi alice, please send payment to 7YWHMfk9JZe0LM0g1ZauHuiSxhI ok ?", replaceWithBogusCoin("Hi alice, please send payment to 7iKDZEwPZSqIvDnHvVN2r0hUWXD5rHX ok ?"))
 	assert.Equal(t, "7YWHMfk9JZe0LM0g1ZauHuiSxhI ok ?", replaceWithBogusCoin("7iKDZEwPZSqIvDnHvVN2r0hUWXD5rHX ok ?"))
+	assert.Equal(t, "[TinyCharlie994] This is a product ID, not a Boguscoin: 76wHjKPI3t7zCZPSUJaN8Wu1uwoVAKCN-u4vsTdErgoL9PZviChc2Jp0iNXkWgo-1234", replaceWithBogusCoin("[TinyCharlie994] This is a product ID, not a Boguscoin: 76wHjKPI3t7zCZPSUJaN8Wu1uwoVAKCN-u4vsTdErgoL9PZviChc2Jp0iNXkWgo-1234"))
 }
