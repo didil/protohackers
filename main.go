@@ -25,8 +25,13 @@ func main() {
 
 	chatSvc := services.NewChatService(logger)
 	unusualDbSvc := services.NewUnusualDbService()
+	speedDaemonSvc := services.NewSpeedDaemonService()
 
-	s, err := server.NewServer(*mode, *port, logger, server.WithChatService(chatSvc), server.WithUnusualDbService(unusualDbSvc))
+	s, err := server.NewServer(*mode, *port, logger,
+		server.WithChatService(chatSvc),
+		server.WithUnusualDbService(unusualDbSvc),
+		server.WithSpeedDaemonDbService(speedDaemonSvc),
+	)
 	if err != nil {
 		logger.Fatal("server init failed", zap.Error(err))
 	}

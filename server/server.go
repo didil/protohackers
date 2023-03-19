@@ -15,11 +15,12 @@ import (
 type ProtoHackersMode string
 
 type Server struct {
-	mode         ProtoHackersMode
-	port         int
-	logger       *zap.Logger
-	chatSvc      services.ChatService
-	unusualDbSvc services.UnusualDbService
+	mode           ProtoHackersMode
+	port           int
+	logger         *zap.Logger
+	chatSvc        services.ChatService
+	unusualDbSvc   services.UnusualDbService
+	speedDaemonSvc services.SpeedDaemonService
 }
 
 const (
@@ -29,6 +30,7 @@ const (
 	ProtoHackersModeBudgetChat      = "budget_chat"
 	ProtoHackersModeUnusualDatabase = "ud"
 	ProtoHackersModeMobInTheMiddle  = "mob"
+	ProtoHackersModeSpeedDaemon     = "speed-daemon"
 )
 
 var validModes = []ProtoHackersMode{
@@ -38,6 +40,7 @@ var validModes = []ProtoHackersMode{
 	ProtoHackersModeBudgetChat,
 	ProtoHackersModeUnusualDatabase,
 	ProtoHackersModeMobInTheMiddle,
+	ProtoHackersModeSpeedDaemon,
 }
 
 type ServerOpt func(*Server) *Server
@@ -69,6 +72,13 @@ func WithChatService(chatSvc services.ChatService) ServerOpt {
 func WithUnusualDbService(unusualDbSvc services.UnusualDbService) ServerOpt {
 	return func(s *Server) *Server {
 		s.unusualDbSvc = unusualDbSvc
+		return s
+	}
+}
+
+func WithSpeedDaemonDbService(speedDaemonSvc services.SpeedDaemonService) ServerOpt {
+	return func(s *Server) *Server {
+		s.speedDaemonSvc = speedDaemonSvc
 		return s
 	}
 }
@@ -144,6 +154,8 @@ func (s *Server) HandleTCPConn(conn net.Conn) {
 		s.HandleBudgetChat(ctx, conn)
 	case ProtoHackersModeMobInTheMiddle:
 		s.HandleMobInTheMiddle(ctx, conn)
+	case ProtoHackersModeSpeedDaemon:
+		s.HandleSpeedDaemon(ctx, conn)
 	default:
 		panic("invalid mode: " + s.mode)
 	}
