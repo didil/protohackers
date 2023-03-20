@@ -1,6 +1,7 @@
 package server
 
 import (
+	"bytes"
 	"encoding/hex"
 	"testing"
 
@@ -51,4 +52,100 @@ func TestWriteStringToBuf(t *testing.T) {
 	writeStringToBuf(buf2, 1+len(msg1), msg2)
 
 	assert.Equal(t, "03666f6f08456c626572657468", hex.EncodeToString(buf2))
+}
+
+func TestParseIAmCamera(t *testing.T) {
+	buf, err := hex.DecodeString("00420064003c")
+	assert.NoError(t, err)
+
+	r := bytes.NewReader(buf)
+	iAmCamera, err := parseIAmCamera(r)
+	assert.NoError(t, err)
+
+	assert.Equal(t, 66, int(iAmCamera.road))
+	assert.Equal(t, 100, int(iAmCamera.mile))
+	assert.Equal(t, 60, int(iAmCamera.limit))
+}
+
+func TestParseIAmCamera2(t *testing.T) {
+	buf, err := hex.DecodeString("017004d20028")
+	assert.NoError(t, err)
+
+	r := bytes.NewReader(buf)
+	iAmCamera, err := parseIAmCamera(r)
+	assert.NoError(t, err)
+
+	assert.Equal(t, 368, int(iAmCamera.road))
+	assert.Equal(t, 1234, int(iAmCamera.mile))
+	assert.Equal(t, 40, int(iAmCamera.limit))
+}
+
+func TestParseIAmDispatcher(t *testing.T) {
+	buf, err := hex.DecodeString("010042")
+	assert.NoError(t, err)
+
+	r := bytes.NewReader(buf)
+	iAmDispatcher, err := parseIAmDispatcher(r)
+	assert.NoError(t, err)
+
+	assert.Equal(t, 1, iAmDispatcher.numRoads)
+	assert.Equal(t, []int{66}, iAmDispatcher.roads)
+}
+
+func TestParseIAmDispatcher2(t *testing.T) {
+	buf, err := hex.DecodeString("03004201701388")
+	assert.NoError(t, err)
+
+	r := bytes.NewReader(buf)
+	iAmDispatcher, err := parseIAmDispatcher(r)
+	assert.NoError(t, err)
+
+	assert.Equal(t, 3, iAmDispatcher.numRoads)
+	assert.Equal(t, []int{66, 368, 5000}, iAmDispatcher.roads)
+}
+
+func TestParsePlate(t *testing.T) {
+	buf, err := hex.DecodeString("04554e3158000003e8")
+	assert.NoError(t, err)
+
+	r := bytes.NewReader(buf)
+	plate, err := parsePlate(r)
+	assert.NoError(t, err)
+
+	assert.Equal(t, "UN1X", plate.plate)
+	assert.Equal(t, 1000, plate.timestamp)
+}
+
+func TestParsePlate2(t *testing.T) {
+	buf, err := hex.DecodeString("0752453035424b470001e240")
+	assert.NoError(t, err)
+
+	r := bytes.NewReader(buf)
+	plate, err := parsePlate(r)
+	assert.NoError(t, err)
+
+	assert.Equal(t, "RE05BKG", plate.plate)
+	assert.Equal(t, 123456, plate.timestamp)
+}
+
+func TestParseWantHeartbeat(t *testing.T) {
+	buf, err := hex.DecodeString("0000000a")
+	assert.NoError(t, err)
+
+	r := bytes.NewReader(buf)
+	wantHeartbeat, err := parseWantHeartbeat(r)
+	assert.NoError(t, err)
+
+	assert.Equal(t, 10, wantHeartbeat.interval)
+}
+
+func TestParseWantHeartbeat2(t *testing.T) {
+	buf, err := hex.DecodeString("000004db")
+	assert.NoError(t, err)
+
+	r := bytes.NewReader(buf)
+	wantHeartbeat, err := parseWantHeartbeat(r)
+	assert.NoError(t, err)
+
+	assert.Equal(t, 1243, wantHeartbeat.interval)
 }
