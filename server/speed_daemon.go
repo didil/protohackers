@@ -6,6 +6,7 @@ import (
 	"io"
 	"net"
 
+	"github.com/didil/protohackers/services"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 )
@@ -15,8 +16,10 @@ func (s *Server) HandleSpeedDaemon(ctx context.Context, conn net.Conn) {
 
 	reqID, _ := ctx.Value(reqIDContextKey).(string)
 
+	connDone := make(chan bool, 1)
+
 	for {
-		err := s.processClientMsg(reqID, conn)
+		err := s.processClientMsg(reqID, conn, connDone)
 		if err != nil {
 			s.speedDaemonSvc.UnregisterClient(reqID)
 			if err == io.EOF {
@@ -25,12 +28,12 @@ func (s *Server) HandleSpeedDaemon(ctx context.Context, conn net.Conn) {
 			s.sendError(conn, err)
 			break
 		}
-
 	}
 
+	connDone <- true
 }
 
-func (s *Server) processClientMsg(reqID string, conn net.Conn) error {
+func (s *Server) processClientMsg(reqID string, conn net.Conn, connDone chan bool) error {
 	msgTypeData := make([]byte, 1)
 	_, err := conn.Read(msgTypeData)
 	if err != nil {
@@ -59,10 +62,25 @@ func (s *Server) processClientMsg(reqID string, conn net.Conn) error {
 			return err
 		}
 
-		err = s.speedDaemonSvc.RegisterAsDispatcher(reqID, iAmDispatcher.roads)
+		ticketChannels, err := s.speedDaemonSvc.RegisterAsDispatcher(reqID, iAmDispatcher.roads)
 		if err != nil {
 			return err
 		}
+
+		for _, ticketC := range ticketChannels {
+			go func() {
+				select {
+				case <-connDone:
+					return
+				case t := <-ticketC:
+					s.sendTicket(conn, t)
+					if err != nil {
+						return err
+					}
+				}
+			}()
+		}
+
 	case MsgTypePlate:
 		camera, err := s.speedDaemonSvc.GetCamera(reqID)
 		if err != nil {
@@ -98,6 +116,32 @@ func (s *Server) sendError(conn net.Conn, err error) {
 func writeStringToBuf(buf []byte, i int, msg string) {
 	buf[i] = byte(len(msg))
 	copy(buf[i+1:], []byte(msg))
+}
+
+func (s *Server) sendTicket(conn net.Conn, t *services.Ticket) error {
+	// 1 byte to store msg type
+	// 1 byte to store platenumber str length
+	// n bytes for platenumber
+	// 2 bytes for road
+	// 2 bytes for mile1
+	// 4 bytes for timestamp1
+	// 2 bytes for mile2
+	// 4 bytes for timestamp2
+	// 2 bytes for speed
+
+	bufLen := 1 + 1 + len(t.Plate) + 2 + 2 + 4 + 2 + 4 + 2
+	buf := make([]byte, bufLen)
+	buf[0] = byte(MsgTypeTicket)
+	writeStringToBuf(buf, 1, t.Plate)
+
+	_, err := conn.Write(buf)
+	if err != nil {
+		return errors.Wrapf(err, "failed to write to conn")
+	}
+
+	// write missing fields
+
+	return nil
 }
 
 type MsgType byte
