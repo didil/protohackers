@@ -67,7 +67,8 @@ func (s *Server) processClientMsg(reqID string, conn net.Conn, connDone chan boo
 			return err
 		}
 
-		for _, ticketC := range ticketChannels {
+		for i := 0; i < len(ticketChannels); i++ {
+			ticketC := ticketChannels[i]
 			go func() {
 				select {
 				case <-connDone:
@@ -75,7 +76,8 @@ func (s *Server) processClientMsg(reqID string, conn net.Conn, connDone chan boo
 				case t := <-ticketC:
 					s.sendTicket(conn, t)
 					if err != nil {
-						return err
+						s.logger.Error("failed to write to conn", zap.Error(err))
+						return
 					}
 				}
 			}()
